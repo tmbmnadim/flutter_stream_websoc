@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:io';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class TestSource {
@@ -11,7 +13,7 @@ class TestSource {
     return null;
   }
 
-  Future<Stream<dynamic>?> websock(WebSocketChannel? channel) async {
+  Future<Stream<dynamic>?> getStreamSrc(WebSocketChannel? channel) async {
     if (await isInternetConnected() && channel != null) {
       return channel.stream;
     }
@@ -34,5 +36,31 @@ class TestSource {
       return false;
     }
     return false;
+  }
+}
+
+class StreamSocket {
+  final _socketResponse = StreamController<String>();
+
+  void Function(String) get addResponse => _socketResponse.sink.add;
+
+  Stream<String> get getResponse => _socketResponse.stream;
+
+  Future<void> initSocketIO() async {
+    IO.Socket socket = IO.io('http://localhost:3000',
+        IO.OptionBuilder().setTransports(['websocket']).build());
+
+    socket.onConnect((_) {
+      print('connect');
+      socket.emit('msg', 'test');
+    });
+
+    //When an event received from server, data is added to the stream
+    socket.on('event', (data) => addResponse);
+    socket.onDisconnect((_) => print('disconnect'));
+  }
+
+  void dispose() {
+    _socketResponse.close();
   }
 }

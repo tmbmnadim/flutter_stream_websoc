@@ -7,7 +7,7 @@ class VM {
   }
 
   Future<Stream<dynamic>?> getStreamVM(WebSocketChannel? channel) async {
-    return await TestSource().websock(channel);
+    return await TestSource().getStreamSrc(channel);
   }
 
   Future<void> sendMessageVM(WebSocketChannel? channel, String message) async {
