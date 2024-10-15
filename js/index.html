@@ -63,6 +63,7 @@
     </form>
 
     <script src="/socket.io/socket.io.js"></script>
+    <script src="./model.js"></script>
 <script>
   const socket = io();
 
@@ -73,14 +74,24 @@
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     if (input.value) {
-      socket.emit('chat message', input.value);
+      
+      const messageObj = {
+        sender: 'browser',
+        message: input.value,
+        timestamp: new Date().toISOString(),
+      };
+
+      const messageJson = JSON.stringify(messageObj);
+
+      socket.emit('chat message', messageJson);
       input.value = '';
     }
   });
 
   socket.on('chat message', (msg) => {
+    const  msgObj  = JSON.parse(msg);
     const item = document.createElement('li');
-    item.textContent = msg;
+    item.textContent = `From ${msgObj.sender}: ${msgObj.message} at ${msgObj.timestamp}`;
     messages.appendChild(item);
     window.scrollTo(0, document.body.scrollHeight);
   });

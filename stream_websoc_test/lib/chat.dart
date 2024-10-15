@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:provider/provider.dart";
 import "package:socket_io_client/socket_io_client.dart" as IO;
+import "package:stream_websoc_test/message_model.dart";
 import "package:stream_websoc_test/provider.dart";
 import "package:stream_websoc_test/sources.dart";
 
@@ -72,17 +73,23 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildMessageItem(String message) {
+  Widget _buildMessageItem(MessageModel message) {
     return Align(
       alignment: Alignment.centerRight,
       child: Container(
+        width: double.infinity,
         padding: const EdgeInsets.all(10.0),
         margin: const EdgeInsets.symmetric(vertical: 4.0),
         decoration: BoxDecoration(
           color: Colors.blue[100],
           borderRadius: BorderRadius.circular(8.0),
         ),
-        child: Text(message),
+        child: Align(
+          alignment: message.sender == "app"
+              ? Alignment.centerLeft
+              : Alignment.centerRight,
+          child: Text(message.message),
+        ),
       ),
     );
   }
@@ -118,8 +125,13 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _sendMessage() {
     if (_controller.text.isNotEmpty) {
+      MessageModel messageModel = MessageModel(
+        sender: "app",
+        message: _controller.text,
+        timestamp: DateTime.now(),
+      );
       Provider.of<TestProvider>(context, listen: false)
-          .sentMessage(_controller.text);
+          .sentMessage(messageModel);
       _controller.clear();
     }
   }
