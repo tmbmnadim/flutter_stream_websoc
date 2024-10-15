@@ -10,6 +10,8 @@ const io = new Server(server);
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+app.use(express.static(__dirname));
+
 app.get('/', (req, res) => {
   res.sendFile(join(__dirname, 'index.html'));
 });
