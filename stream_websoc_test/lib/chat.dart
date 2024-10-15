@@ -1,6 +1,8 @@
 import "package:flutter/material.dart";
 import "package:provider/provider.dart";
+import "package:socket_io_client/socket_io_client.dart" as IO;
 import "package:stream_websoc_test/provider.dart";
+import "package:stream_websoc_test/sources.dart";
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -10,14 +12,15 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final List<String> _messages = ["----", "===="];
   final TextEditingController _controller = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    Provider.of<TestProvider>(context, listen: false).initWebsSocket();
-    Provider.of<TestProvider>(context, listen: false).getStream();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<TestProvider>(context, listen: false).initWebSocket();
+      Provider.of<TestProvider>(context, listen: false).getStream();
+    });
   }
 
   @override
@@ -38,18 +41,24 @@ class _ChatScreenState extends State<ChatScreen> {
         builder: (_, provider, __) {
           return StreamBuilder(
             stream: provider.stream ?? const Stream.empty(),
+            // stream: streamSoc.getStreamSrc,
             builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                _messages.insert(_messages.length - 1, snapshot.data);
+              if (snapshot.hasData &&
+                  (provider.messages.isEmpty ||
+                      snapshot.data.hashCode !=
+                          provider.messages.last.hashCode)) {
+                provider.addMessage(snapshot.data ?? "");
+                print(
+                    "${snapshot.data.hashCode} ${provider.messages.last.hashCode}");
               }
               return Column(
                 children: [
                   Expanded(
                     child: ListView.builder(
                       padding: const EdgeInsets.all(8.0),
-                      itemCount: _messages.length,
+                      itemCount: provider.messages.length,
                       itemBuilder: (context, index) {
-                        return _buildMessageItem(_messages[index]);
+                        return _buildMessageItem(provider.messages[index]);
                       },
                     ),
                   ),
@@ -111,6 +120,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_controller.text.isNotEmpty) {
       Provider.of<TestProvider>(context, listen: false)
           .sentMessage(_controller.text);
+      _controller.clear();
     }
   }
 

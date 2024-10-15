@@ -1,26 +1,41 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:stream_websoc_test/view_model.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 
 class TestProvider extends ChangeNotifier {
-  WebSocketChannel? _channel;
+  late StreamController<String> _socketResponse;
+  IO.Socket? _socket;
   Stream<dynamic>? _stream;
+  final List<String> _messages = [];
 
-  WebSocketChannel? get channel => _channel;
+  StreamController<String>? get socketResponse => _socketResponse;
+  IO.Socket? get socket => _socket;
   Stream<dynamic>? get stream => _stream;
+  List<String> get messages => _messages;
 
-  void initWebsSocket() async {
-    _channel = await VM().initWebSocketVM();
+  void addMessage(String message) {
+    _messages.add(message);
+  }
+
+  void initWebSocket() async {
+    StreamController<String> socRes;
+    IO.Socket soc;
+    (soc, socRes) = await VM().initSocketIOVM();
+
+    _socket = soc;
+    _socketResponse = socRes;
+    getStream();
     notifyListeners();
   }
 
   void getStream() async {
-    _stream = await VM().getStreamVM(_channel);
+    _stream = socketResponse?.stream ?? const Stream.empty();
     notifyListeners();
   }
 
   void sentMessage(String text) async {
-    await VM().sendMessageVM(_channel, text);
+    await VM().sendMessageVM(_socket!, text);
     notifyListeners();
   }
 }

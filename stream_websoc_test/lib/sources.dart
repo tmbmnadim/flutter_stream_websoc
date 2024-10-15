@@ -40,27 +40,39 @@ class TestSource {
 }
 
 class StreamSocket {
-  final _socketResponse = StreamController<String>();
+  void addResponseSrc(IO.Socket socket, String message) {
+    print("message sent");
+    socket.emit('chat message', message);
+  }
 
-  void Function(String) get addResponse => _socketResponse.sink.add;
+  Future<(IO.Socket, StreamController<String>)> initSocketIO() async {
+    final socketResponse = StreamController<String>();
 
-  Stream<String> get getResponse => _socketResponse.stream;
+    IO.Socket socket = IO.io(
+      'http://10.10.9.219:3000',
+      IO.OptionBuilder().setTransports(['websocket']).build(),
+    );
 
-  Future<void> initSocketIO() async {
-    IO.Socket socket = IO.io('http://localhost:3000',
-        IO.OptionBuilder().setTransports(['websocket']).build());
+    socket.onError((data) => print(data));
 
     socket.onConnect((_) {
-      print('connect');
-      socket.emit('msg', 'test');
+      print('Connected');
     });
 
     //When an event received from server, data is added to the stream
-    socket.on('event', (data) => addResponse);
+    socket.on(
+      'chat message',
+      (data) {
+        print("message received");
+        socketResponse.sink.add(data);
+      },
+    );
+
     socket.onDisconnect((_) => print('disconnect'));
+    return (socket, socketResponse);
   }
 
-  void dispose() {
-    _socketResponse.close();
+  void dispose(StreamController<String> socketResponse) {
+    socketResponse.close();
   }
 }
